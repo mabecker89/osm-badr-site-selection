@@ -167,7 +167,7 @@ map <- sf_ab %>%
 
 # Save map:
 
-htmlwidgets::saveWidget(map, file = here("docs/osm_badr_camaru_site_selection.html"), selfcontained = FALSE)
+htmlwidgets::saveWidget(map, file = here("docs/proposed_camaru_site_map.html"), selfcontained = FALSE)
 
 
 
