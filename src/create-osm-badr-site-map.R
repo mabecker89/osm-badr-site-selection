@@ -46,6 +46,7 @@ sf_jem_buffer <- st_read(paste0(root, "official-layers/tbm_jem_2021_1000m_buffer
 # Jake's Stations
 sf_jake <- st_read(paste0(root, "official-layers/tbm_jake_2021_grouping.shp")) %>%
   st_transform(4326) %>%
+  mutate(groups = ifelse(Station == "LU3_lowland_46", "0-3", groups)) %>%
   mutate(groups = factor(groups, levels = c("0-3", "3-6", "+6", "Not considered")))
 # Decidmix all treatments
 sf_decidmix_all <- st_read(paste0(root, "official-layers/tbm_decidmixed40_jem1500clip_alltreatments.shp")) %>%
