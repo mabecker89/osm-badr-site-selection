@@ -44,8 +44,9 @@ sf_jem_buffer <- st_read(paste0(root, "official-layers/tbm_jem_2021_1000m_buffer
     Treatment == "PI" ~ "Pre-Insitu"
   ))
 # Jake's Stations
-sf_jake <- st_read(paste0(root, "shapefiles/tbm_jakes_2021.shp")) %>%
-  st_transform(4326)
+sf_jake <- st_read(paste0(root, "official-layers/tbm_jake_2021_grouping.shp")) %>%
+  st_transform(4326) %>%
+  mutate(groups = factor(groups, levels = c("0-3", "3-6", "+6", "Not considered")))
 # Decidmix all treatments
 sf_decidmix_all <- st_read(paste0(root, "official-layers/tbm_decidmixed40_jem1500clip_alltreatments.shp")) %>%
   st_transform(4326) %>%
@@ -68,6 +69,9 @@ pal_treedlow <-colorFactor(
   palette = "Dark2",
   domain = sf_treedlow_all$Treatment
 )
+pal_jake <- colorFactor(palette = c("#fff7bc", "#fec44f", "#d95f0e", "#808080"),
+                        reverse = FALSE,
+                        domain = sf_jake$groups)
 # Icons
 cam_abmi <- makeAwesomeIcon(
   icon = "camera",
@@ -97,24 +101,25 @@ map <- sf_ab %>%
                  circleOptions = FALSE, rectangleOptions = FALSE, circleMarkerOptions = FALSE,
                  markerOptions = drawMarkerOptions(repeatMode = TRUE, markerIcon = cam_abmi),
                  editOptions = editToolbarOptions(edit = TRUE, remove = TRUE)) %>%
-  addMapPane(name = "Boundaries", zIndex = 410) %>%
+  addMapPane(name = "Boundaries LU", zIndex = 410) %>%
+  addMapPane(name = "Boundaries JEM", zIndex = 415) %>%
   addMapPane(name = "Habitat Treatment Data", zIndex = 420) %>%
   addMapPane(name = "Camera Sites", zIndex = 430) %>%
 
   # Add polygon layers
 
   addPolygons(color = "#070707", weight = 1, smoothFactor = 0.2, opacity = 2, fill = FALSE,
-              group = "None", options = leafletOptions(pane = "Boundaries")) %>%
+              group = "None", options = leafletOptions(pane = "Boundaries LU")) %>%
 
   addPolygons(data = sf_lu, color = "white", weight = 1, smoothFactor = 0.2, opacity = 1,
-              fillOpacity = 0.05, group = "Landscape Units (2021)", options = leafletOptions(pane = "Boundaries"),
+              fillOpacity = 0.05, group = "Landscape Units (2021)", options = leafletOptions(pane = "Boundaries LU"),
               popup = paste("Treatment: ", "<b>", sf_lu$LUTreatmnt, "</b>",
                             "<br>", "<br>",
                             "LU Code: ", "<b>", sf_lu$LU, "</b>")) %>%
 
   addPolygons(data = sf_jem_buffer, color = "#6baed6", fillColor = "black",
               weight = 1, smoothFactor = 0.2, opacity = 1, fillOpacity = 0.1, group = "JEM Sites",
-              options = leafletOptions(pane = "Boundaries"),
+              options = leafletOptions(pane = "Boundaries JEM"),
               popup = paste("Habitat Target: ", "<b>", sf_jem_buffer$Habitat, "</b>", "<br>",
                             "<br>",
                             "Treatment Target: ", "<b>", sf_jem_buffer$Treatment, "</b>", "<br>",
@@ -135,7 +140,7 @@ map <- sf_ab %>%
               highlightOptions = highlightOptions(color = "white", weight = 2, bringToFront = TRUE)) %>%
 
   addCircleMarkers(data = sf_jake,
-                   color = "orange", stroke = FALSE, fillOpacity = 1,
+                   color = ~ pal_jake(groups), stroke = FALSE, fillOpacity = 1,
                    radius = 6, group = "Jake Camera Sites",
                    options = leafletOptions(pane = "Camera Sites"),
                    popup = paste("Station: ", "<b>", sf_jake$Station, "</b>")) %>%
@@ -161,7 +166,13 @@ map <- sf_ab %>%
             values = ~ Treatment,
             opacity = 1) %>%
 
+  addLegend(data = sf_jake, position = "bottomright", pal = pal_jake, values = ~ groups, opacity = 1,
+            title = "% Surrounding Area of LF",
+            group = "Jake Camera Sites") %>%
+
   hideGroup(c("Jake Camera Sites", "ABMI CAM/ARU Sites (Proposed)"))
+
+map
 
 #-----------------------------------------------------------------------------------------------------------------------
 
